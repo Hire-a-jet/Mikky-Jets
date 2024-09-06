@@ -1,5 +1,5 @@
-import React, { useEffect, useState,useNavigate } from "react";
-import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -22,6 +22,7 @@ import { Formik } from "formik";
 import {HiOutlineTicket} from 'react-icons/hi'
 
 function TicketComponent() {
+  const navigate = useNavigate();
   
   const [userData, setUserData] = useState([]);
   const [formData, setFormData] = useState({
@@ -34,26 +35,24 @@ function TicketComponent() {
     economy: "",
     payment_type : "",
   });
+
   useEffect(() => {
-    async function getData() {
-      const response = await axios.get("https://63a12cb024d74f9fe849649e.mockapi.io/ticketBooking"
-        
-      );
-      setUserData(response.data);
-    }
-    getData();
+    // Load data from local storage on component mount
+    const storedData = JSON.parse(localStorage.getItem("ticketBookings")) || [];
+    setUserData(storedData);
   }, []);
+
   const onPopulateData = (id) => {
-    const selectedData = userData.filter((row) => row.id === id)[0];
+    const selectedData = userData.find((row) => row.id === id);
     setFormData({ ...selectedData });
   };
-  const handleDelete = async (id) => {
-    const response = await axios.delete(
-      `https://63a12cb024d74f9fe849649e.mockapi.io/ticketBooking/${id}`
-    );
-    const unDeletedData = userData.filter((row) => row.id !== id);
-    setUserData(unDeletedData);
+
+  const handleDelete = (id) => {
+    const updatedData = userData.filter((row) => row.id !== id);
+    setUserData(updatedData);
+    localStorage.setItem("ticketBookings", JSON.stringify(updatedData));
   };
+
   const validateForm = (formDataToValidate) => {
     var error = {};
     if (formDataToValidate.from === "") error.from = "From is Required";
@@ -66,29 +65,29 @@ function TicketComponent() {
       if (formDataToValidate.payment_type === "") error.payment_type = "Payment_type is Required";
     return error;
   };
+
   const handleSubmit = async (formSubmittedData, { resetForm }) => {
+    let updatedUserData;
     if (formData.id) {
       // Update
-      const response = await axios.put(
-        `https://63a12cb024d74f9fe849649e.mockapi.io/ticketBooing/${formData.id}`,
-        { ...formSubmittedData }
+      updatedUserData = userData.map((user) =>
+        user.id === formData.id ? { ...formSubmittedData, id: formData.id } : user
       );
-      let user = [...userData];
-      let index = userData.findIndex((row) => row.id === formData.id);
-      user[index] = response.data;
-      setUserData(user);
-      resetForm();
     } else {
       // Create
-      const response = await axios.post(
-        "https://63a12cb024d74f9fe849649e.mockapi.io/ticketBooing",
-        { ...formSubmittedData }
-      );
-      setUserData([...userData, response.data]);
-      resetForm();
-      
+      const newBooking = {
+        ...formSubmittedData,
+        id: Date.now().toString(),
+      };
+      updatedUserData = [...userData, newBooking];
     }
+    
+    setUserData(updatedUserData);
+    localStorage.setItem("ticketBookings", JSON.stringify(updatedUserData));
+    resetForm();
+    navigate("/flights"); // Redirect to flights page
   };
+
   return (
     <div  style={{ padding: "10px"  }}>
       <h2 color="orange" >TICKET BOOKING<HiOutlineTicket size='3rem'color="red"/></h2>

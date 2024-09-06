@@ -86,7 +86,7 @@ function Users() {
     e.preventDefault();
     // Delete
     const errKeys = Object.keys(formData).filter((key) => {
-      if (formData[key] === "" && key != "error" && key != "_id") {
+      if (formData[key] === "" && key !== "error" && key !== "_id") {
         return key;
       }
     });
